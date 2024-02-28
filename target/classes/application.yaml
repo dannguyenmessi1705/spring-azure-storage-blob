@@ -1,0 +1,25 @@
+azure:
+  storage:
+    container:
+      name: files
+    connection:
+      string: DefaultEndpointsProtocol=https;AccountName=dannguyen1705;AccountKey=HazGM3YiIu1ITFJnMyUfj12rCl0pm2RIODY5D9D1lqDLf/ULL8hye+jW+ZtpG8jM+te5BOIjAq2z+ASt9V4nnA==;EndpointSuffix=core.windows.net
+server:
+  port: 8088
+
+# Kết nối mySQL
+# Docker và Localhost
+spring:
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/spring_azure_blob
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:17052002}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL5Dialect
+    show-sql: true
+    generate-ddl: true
+    hibernate.ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
