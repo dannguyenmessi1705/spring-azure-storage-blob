@@ -38,9 +38,7 @@ public class SasUtils {
         OffsetDateTime expiryTime = OffsetDateTime.now().plusYears(5);
 
         // Assign read permissions to the SAS token
-        BlobContainerSasPermission sasPermission = new BlobContainerSasPermission()
-                .setCreatePermission(true)
-                .setReadPermission(true);
+        BlobContainerSasPermission sasPermission = BlobContainerSasPermission.parse("racwdli");
 
         BlobServiceSasSignatureValues sasSignatureValues = new BlobServiceSasSignatureValues(expiryTime, sasPermission)
                 .setStartTime(OffsetDateTime.now().minusMinutes(5));

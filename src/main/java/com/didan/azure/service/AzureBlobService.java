@@ -84,7 +84,7 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 		fileInfo.setFilePath(blobClient.getBlobUrl());
 		fileInfo.setUsers(user);
 		fileInfoRepository.save(fileInfo);
-		return multipartFile.getOriginalFilename();
+		return newFileName;
 	}
 
 //	// Upload many files to Azure Blob Storage
