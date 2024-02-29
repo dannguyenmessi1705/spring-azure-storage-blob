@@ -2,17 +2,21 @@ package com.didan.azure.entity;
 
 import jakarta.persistence.*;
 
-@Entity(name = "info_sas")
-public class InfoSass {
-    @Id
-    @Column(name = "id", unique = true)
-    private String idInfo;
+import java.util.Date;
+import java.util.Set;
 
-    @Column(name = "sas_token", nullable = false)
+@Entity(name = "file_info")
+public class FileInfo {
+    @Id
+    @Column(name = "file_id", unique = true)
+    private String fileId;
+
+    @Column(name = "sas_token", nullable = true)
     private String sasToken;
 
-    @Column(name = "expired_at", nullable = false)
-    private String expiredAt;
+    @Column(name = "expired_at", nullable = true)
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date expiredAt;
 
     @Column(name = "file_name", nullable = false)
     private String fileName;
@@ -21,15 +25,18 @@ public class InfoSass {
     private String filePath;
 
     @ManyToOne
-    @JoinColumn(name = "own_sas", nullable = false)
+    @JoinColumn(name = "own_file", nullable = false)
     private Users users;
 
-    public String getIdInfo() {
-        return idInfo;
+    @OneToMany(mappedBy = "fileInfo", cascade = CascadeType.ALL)
+    private Set<Sas> sass;
+
+    public String getFileId() {
+        return fileId;
     }
 
-    public void setIdInfo(String idInfo) {
-        this.idInfo = idInfo;
+    public void setFileId(String fileId) {
+        this.fileId = fileId;
     }
 
     public String getSasToken() {
@@ -40,11 +47,11 @@ public class InfoSass {
         this.sasToken = sasToken;
     }
 
-    public String getExpiredAt() {
+    public Date getExpiredAt() {
         return expiredAt;
     }
 
-    public void setExpiredAt(String expiredAt) {
+    public void setExpiredAt(Date expiredAt) {
         this.expiredAt = expiredAt;
     }
 
@@ -70,5 +77,13 @@ public class InfoSass {
 
     public void setUsers(Users users) {
         this.users = users;
+    }
+
+    public Set<Sas> getSass() {
+        return sass;
+    }
+
+    public void setSass(Set<Sas> sass) {
+        this.sass = sass;
     }
 }

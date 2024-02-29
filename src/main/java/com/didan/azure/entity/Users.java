@@ -2,7 +2,6 @@ package com.didan.azure.entity;
 
 import jakarta.persistence.*;
 
-import java.util.Date;
 import java.util.Set;
 
 @Entity(name = "users")
@@ -17,11 +16,17 @@ public class Users {
     @Column(name = "password", nullable = false)
     private String password;
 
-    @Column(name = "access_token", nullable = false)
+    @Column(name = "access_token", nullable = true)
     private String accessToken;
 
-    @OneToMany(mappedBy = "infoSas", cascade = CascadeType.ALL)
-    private Set<InfoSass> infoSass;
+    @Column(name = "sas_directory", nullable = false)
+    private String sasDirectory;
+
+    @OneToMany(mappedBy = "users", cascade = CascadeType.ALL)
+    private Set<FileInfo> fileInfos;
+
+    @OneToMany(mappedBy = "users", cascade = CascadeType.ALL)
+    private Set<Sas> sass;
 
     public String getUserId() {
         return userId;
@@ -55,11 +60,27 @@ public class Users {
         this.accessToken = accessToken;
     }
 
-    public Set<InfoSass> getInfoSass() {
-        return infoSass;
+    public String getSasDirectory() {
+        return sasDirectory;
     }
 
-    public void setInfoSass(Set<InfoSass> infoSass) {
-        this.infoSass = infoSass;
+    public void setSasDirectory(String sasDirectory) {
+        this.sasDirectory = sasDirectory;
+    }
+
+    public Set<FileInfo> getFileInfos() {
+        return fileInfos;
+    }
+
+    public void setFileInfos(Set<FileInfo> fileInfos) {
+        this.fileInfos = fileInfos;
+    }
+
+    public Set<Sas> getSass() {
+        return sass;
+    }
+
+    public void setSass(Set<Sas> sass) {
+        this.sass = sass;
     }
 }

@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -29,11 +30,12 @@ public class CustomFilterSecurity {
     // Quy định các rules
     @Bean // Đánh dấu đây là Bean, ghi đè lên Bean mặc định của Spring Security
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception { // Cấu hình bộ lọc
-        http.cors();
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http.cors(cors -> cors.configure(http));
         http.csrf(csrf -> csrf.disable()); // Tắt csrf
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // Tắt Session
         http.authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/auth/**", "/api-docs**/**", "swagger-ui/**")
+                .requestMatchers("/auth/**", "/api-docs**/**", "/swagger-ui/**", "/files/**")
                 .permitAll()
                 .anyRequest()
                 .authenticated()
@@ -48,7 +50,6 @@ public class CustomFilterSecurity {
                     logger.error("UNAUTHORIZED OR THE ROUTE IS NOT FOUND");
                 })
         ); // Bắt lỗi nếu không authorized được thì trả về message
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build(); // Trả về bộ lọc
     }
 
@@ -57,4 +58,5 @@ public class CustomFilterSecurity {
     public PasswordEncoder passwordEncoder() { // Đánh dấu đây là Bean, ghi đè lên Bean mặc định của Spring Security
         return new BCryptPasswordEncoder(); // Trả về đối tượng BCryptPasswordEncoder
     }
+
 }

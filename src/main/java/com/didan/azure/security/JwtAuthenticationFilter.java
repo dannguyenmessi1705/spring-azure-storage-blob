@@ -20,13 +20,10 @@ import java.util.ArrayList;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private final JwtUtils jwtUtils;
-    private final UserRepository userRepository;
     @Autowired
-    public JwtAuthenticationFilter(JwtUtils jwtUtils, UserRepository userRepository){
-        this.jwtUtils = jwtUtils;
-        this.userRepository = userRepository;
-    }
+    private JwtUtils jwtUtils;
+    @Autowired
+    UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -35,7 +32,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 jwtUtils.validateAccessToken(accessToken);
                 String userId = jwtUtils.getUserIdFromAccessToken(accessToken);
-                Users user = userRepository.findByUserId(userId);
+                Users user = userRepository.findFirstByUserId(userId);
                 if (user != null){
                     UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(null, null, new ArrayList<>());
                     SecurityContext securityContext = SecurityContextHolder.getContext();

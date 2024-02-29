@@ -10,7 +10,6 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -25,8 +24,6 @@ public class JwtUtils {
 
     @Value("${jwt.secretkey}")
     private String secretKey;
-    private static final long ACCESS_TOKEN_EXPIRATION_TIME = 24 * 60 * 60 * 1000; // Thời gian hết hạn của access token (1 ngày)
-
     // Mã hóa data, userId thành accessToken dùng để xác thực người dùng
     public String generateAccessToken(String data){
         SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(this.secretKey));

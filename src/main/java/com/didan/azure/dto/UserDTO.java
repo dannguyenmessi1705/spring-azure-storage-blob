@@ -1,15 +1,19 @@
-package com.didan.azure.payload.request;
+package com.didan.azure.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.springframework.web.multipart.MultipartFile;
+import java.util.List;
 
-import java.util.Date;
-
-public class SignUpRequest {
-    @JsonProperty(required = true)
+public class UserDTO {
+    private String userId;
     private String username;
-    @JsonProperty(required = true)
     private String password;
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
 
     public String getUsername() {
         return username;

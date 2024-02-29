@@ -1,9 +1,12 @@
 azure:
   storage:
-    container:
-      name: files
+    endpoint: https://didanjava.blob.core.windows.net/
     connection:
-      string: DefaultEndpointsProtocol=https;AccountName=dannguyen1705;AccountKey=HazGM3YiIu1ITFJnMyUfj12rCl0pm2RIODY5D9D1lqDLf/ULL8hye+jW+ZtpG8jM+te5BOIjAq2z+ASt9V4nnA==;EndpointSuffix=core.windows.net
+      string: DefaultEndpointsProtocol=https;AccountName=didanjava;AccountKey=sMRV7V7Am8gostA3S/ThN4oV1/4zXly26Q6zjm0UjKoKMqBtSIp329jACzfO/EEPI3Ulbwk1Ysal+ASt8PqdnQ==;EndpointSuffix=core.windows.net
+    account:
+      name: didanjava
+    key: sMRV7V7Am8gostA3S/ThN4oV1/4zXly26Q6zjm0UjKoKMqBtSIp329jACzfO/EEPI3Ulbwk1Ysal+ASt8PqdnQ==
+
 server:
   port: 8088
 
@@ -23,3 +26,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
+
+
+## JWT
+jwt:
+  secretkey: wyD7j04/rzm+8EABKgQTPO9cFojZI2Q2xRPycfhHtZc=
