@@ -21,17 +21,16 @@ public class SasUtils {
         this.blobServiceClient = blobServiceClient;
     }
 
-    public String generateSasTokenForContainer(String containerName) {
-        BlobContainerClient containerClient = blobServiceClient.getBlobContainerClient(containerName);
-        String containerPath = containerName;
-        BlobClient blobClient = containerClient.getBlobClient(containerPath);
-        SasProtocol sasProtocol = SasProtocol.HTTPS_HTTP;
-        BlobServiceSasSignatureValues sasValues = new BlobServiceSasSignatureValues(OffsetDateTime.now().plusYears(5), BlobSasPermission.parse("racwdli"))
-                .setVersion("2022-11-02")
-                .setProtocol(sasProtocol)
-                .setStartTime(OffsetDateTime.now());
-
-        return blobClient.generateSas(sasValues);
+    public String createServiceSASBlob(BlobClient blobClient) {
+        // Create a SAS token that's valid for 1 day, as an example
+        OffsetDateTime expiryTime = OffsetDateTime.now().plusYears(5);
+        // Assign read permissions to the SAS token
+        BlobSasPermission sasPermission = new BlobSasPermission()
+                .setReadPermission(true);
+        BlobServiceSasSignatureValues sasSignatureValues = new BlobServiceSasSignatureValues(expiryTime, sasPermission)
+                .setStartTime(OffsetDateTime.now().minusMinutes(5));
+        String sasToken = blobClient.generateSas(sasSignatureValues);
+        return sasToken;
     }
     public String createServiceSASContainer(BlobContainerClient containerClient) {
         // Create a SAS token that's valid for 1 day, as an example, Local UTC time

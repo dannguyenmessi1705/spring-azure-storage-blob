@@ -33,14 +33,14 @@ public class AzureController {
 	private AzureBlobService azureBlobService;
 
 	@PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> postLogin(@RequestParam MultipartFile file) {
+	public ResponseEntity<?> uploadMany(@RequestParam MultipartFile[] files) {
 		ResponseData payload = new ResponseData();
-		Map<String, String> response = new HashMap<>();
+		Map<String, List<String>> response = new HashMap<>();
 		try{
-			String fileName = azureBlobService.uploadFile(file);
-			if (StringUtils.hasText(fileName)) {
-				payload.setDescription("Upload file successful");
-				response.put("fileName", fileName);
+			List<String> fileNames = azureBlobService.upload(files);
+			if (fileNames != null) {
+				payload.setDescription("Upload files successful");
+				response.put("fileNames", fileNames);
 				payload.setData(response);
 			}
 			return new ResponseEntity<>(payload, HttpStatus.OK);
@@ -52,6 +52,26 @@ public class AzureController {
 		}
 	}
 
+	// Share file with user
+	@PostMapping(value = "/share", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> shareFile(@RequestParam String filename, @RequestParam String username) {
+		ResponseData payload = new ResponseData();
+		Map<String, String> data = new HashMap<>();
+		try{
+			if (azureBlobService.shareFile(filename, username)) {
+				payload.setDescription("Share file successful");
+				data.put("filename", filename);
+				data.put("username", username);
+				payload.setData(data);
+			}
+			return new ResponseEntity<>(payload, HttpStatus.OK);
+		} catch (Exception e){
+			payload.setDescription(e.getMessage());
+			payload.setStatusCode(500);
+			payload.setSuccess(false);
+			return new ResponseEntity<>(payload, HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
 
 //	@PostMapping("/upload/many")
 //	public ResponseEntity<List<String>> uploadMany(@RequestParam MultipartFile[] files) throws IOException {

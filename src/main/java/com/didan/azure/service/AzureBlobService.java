@@ -5,18 +5,23 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 
 import com.azure.core.http.rest.Response;
 import com.azure.storage.blob.BlobClientBuilder;
 import com.didan.azure.entity.FileInfo;
+import com.didan.azure.entity.Sas;
 import com.didan.azure.entity.Users;
+import com.didan.azure.entity.keys.SasId;
 import com.didan.azure.exception.AzureBlobStorageException;
 import com.didan.azure.repository.FileInfoRepository;
+import com.didan.azure.repository.SasRepository;
 import com.didan.azure.repository.UserRepository;
 import com.didan.azure.service.impl.AzureBlobServiceImpl;
 import com.didan.azure.utils.JwtUtils;
+import com.didan.azure.utils.SasUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -44,59 +49,98 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 	private final JwtUtils jwtUtils;
 	private final UserRepository userRepository;
 	private final FileInfoRepository fileInfoRepository;
+	private final SasRepository sasRepository;
+	private final SasUtils sasUtils;
 	@Autowired
 	public AzureBlobService(HttpServletRequest request,
 							HttpServletResponse response,
 							BlobServiceClient blobServiceClient,
 							JwtUtils jwtUtils,
 							UserRepository userRepository,
-							FileInfoRepository fileInfoRepository){
+							FileInfoRepository fileInfoRepository,
+							SasRepository sasRepository,
+							SasUtils sasUtils){
 		this.request = request;
 		this.response = response;
 		this.blobServiceClient = blobServiceClient;
 		this.jwtUtils = jwtUtils;
 		this.userRepository = userRepository;
 		this.fileInfoRepository = fileInfoRepository;
+		this.sasRepository = sasRepository;
+		this.sasUtils = sasUtils;
 	}
 
-	// Upload file to Azure Blob Storage
+	// Upload many files to Azure Blob Storage
 	@Override
-	public String uploadFile(MultipartFile multipartFile) throws IOException {
+	public List<String> upload(MultipartFile[] multipartFiles) throws IOException {
 		String accessToken = jwtUtils.getTokenFromHeader(request);
 		if (!StringUtils.hasText(accessToken)) {
 			logger.info("Not Authorized");
 		}
 		String userId = jwtUtils.getUserIdFromAccessToken(accessToken);
 		Users user = userRepository.findFirstByUserId(userId);
-		String fileName = multipartFile.getOriginalFilename();
-		String[] split = fileName.split("\\.");
-		String newFileName = split[0] + "_" + System.currentTimeMillis() + "." + split[1];
-		BlobClient blobClient = new BlobClientBuilder()
-				.endpoint(endpoint)
-				.containerName(user.getUsername())
-				.blobName(newFileName)
-				.sasToken(user.getSasDirectory())
-				.buildClient();
-		blobClient.upload(multipartFile.getInputStream(), multipartFile.getSize(), true);
-		FileInfo fileInfo = new FileInfo();
-		fileInfo.setFileId(UUID.randomUUID().toString());
-		fileInfo.setFileName(newFileName);
-		fileInfo.setFilePath(blobClient.getBlobUrl());
-		fileInfo.setUsers(user);
-		fileInfoRepository.save(fileInfo);
-		return newFileName;
+		List<String> fileNames = new ArrayList<>();
+		for (MultipartFile multipartFile : multipartFiles) {
+			String fileName = multipartFile.getOriginalFilename();
+			String[] split = fileName.split("\\.");
+			String newFileName = split[0] + "_" + System.currentTimeMillis() + "." + split[1];
+			BlobClient blobClient = new BlobClientBuilder()
+					.endpoint(endpoint)
+					.containerName(user.getUsername())
+					.blobName(newFileName)
+					.sasToken(user.getSasDirectory())
+					.buildClient();
+			blobClient.upload(multipartFile.getInputStream(), multipartFile.getSize(), true);
+			BlobClient blob = blobServiceClient.getBlobContainerClient(user.getUsername()).getBlobClient(newFileName);
+			String sasBlobToken = sasUtils.createServiceSASBlob(blob);
+			FileInfo fileInfo = new FileInfo();
+			fileInfo.setSasToken(sasBlobToken);
+			fileInfo.setFileId(UUID.randomUUID().toString());
+			fileInfo.setFileName(newFileName);
+			fileInfo.setFilePath(blobClient.getBlobUrl());
+			fileInfo.setUsers(user);
+			fileInfoRepository.save(fileInfo);
+			Sas sas = new Sas();
+			sas.setSasId(new SasId(sasBlobToken, userId));
+			sasRepository.save(sas);
+			fileNames.add(newFileName);
+		}
+		return fileNames;
 	}
 
-//	// Upload many files to Azure Blob Storage
-//	public List<String> uploadMany(MultipartFile[] multipartFiles) throws IOException {
-//		List<String> fileNames = new ArrayList<String>();
-//		for (MultipartFile multipartFile : multipartFiles) {
-//			BlobClient blob = blobContainerClient.getBlobClient(multipartFile.getOriginalFilename());
-//			blob.upload(multipartFile.getInputStream(), multipartFile.getSize(), true);
-//			fileNames.add(multipartFile.getOriginalFilename());
-//		}
-//		return fileNames;
-//	}
+	// Share file to another user by creating a new SAS token
+	@Override
+	public boolean shareFile(String fileName, String username) throws AzureBlobStorageException {
+		try {
+			String accessToken = jwtUtils.getTokenFromHeader(request);
+			if (!StringUtils.hasText(accessToken)) {
+				logger.info("Not Authorized");
+			}
+			String userId = jwtUtils.getUserIdFromAccessToken(accessToken);
+			Users user = userRepository.findFirstByUserId(userId);
+			FileInfo file = user.getFileInfos().stream().filter(fileInfo -> (fileInfo.getFileName().equals(fileName) && fileInfo.getUsers().getUserId().equals(userId))).findFirst().orElse(null);
+			if (file == null) {
+				throw new AzureBlobStorageException("File not found");
+			}
+			Users shareUser = userRepository.findFirstByUsername(username);
+			if (shareUser == null) {
+				throw new AzureBlobStorageException("User not found");
+			}
+			if (shareUser.getUserId() == userId){
+				throw new AzureBlobStorageException("You can't share file to yourself");
+			}
+			Sas sasKey = file.getSass().stream().filter(sas -> sas.getUsers().getUserId().equals(shareUser.getUserId())).findFirst().orElse(null);
+			if (sasKey != null) {
+				throw new AzureBlobStorageException("File has been shared to this user");
+			}
+			Sas sas = new Sas();
+			sas.setSasId(new SasId(file.getSasToken(), shareUser.getUserId()));
+			sasRepository.save(sas);
+		} catch (Exception e) {
+			throw new AzureBlobStorageException(e.getMessage());
+		}
+		return true;
+	}
 //
 //
 //

@@ -14,4 +14,12 @@ public class SasId implements Serializable {
     @Column(name = "own_permis_sas", nullable = false)
     private String ownPermisSas;
 
+    public SasId(String sasToken, String ownPermisSas) {
+        this.sasToken = sasToken;
+        this.ownPermisSas = ownPermisSas;
+    }
+
+    public SasId() {
+
+    }
 }

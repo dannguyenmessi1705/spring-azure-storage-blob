@@ -11,7 +11,7 @@ public class FileInfo {
     @Column(name = "file_id", unique = true)
     private String fileId;
 
-    @Column(name = "sas_token", nullable = true)
+    @Column(name = "sas_token", nullable = false, unique = true)
     private String sasToken;
 
     @Column(name = "expired_at", nullable = true)
