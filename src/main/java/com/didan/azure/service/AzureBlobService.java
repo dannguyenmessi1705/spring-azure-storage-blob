@@ -3,10 +3,7 @@ package com.didan.azure.service;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 
 import com.azure.core.http.rest.Response;
@@ -28,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -221,6 +219,42 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 		}
 		return true;
 	}
+
+	// Download file from url + sasToken and set Header Content-Disposition to "attachment; filename=\"" + fileName + "\""
+	public byte[] downloadFile(String fileName) throws IOException, AzureBlobStorageException {
+		String accessToken = jwtUtils.getTokenFromHeader(request);
+		if (!StringUtils.hasText(accessToken)) {
+			logger.info("Not Authorized");
+		}
+		String userId = jwtUtils.getUserIdFromAccessToken(accessToken);
+		Users user = userRepository.findFirstByUserId(userId);
+		FileInfo file = fileInfoRepository.findByFileName(fileName);
+		if (file == null) {
+			throw new AzureBlobStorageException("File not found");
+		}
+		String sasToken = null;
+		if (file.getUsers().getUserId().equals(userId)) {
+			sasToken = file.getSasToken();
+		} else {
+			Sas sas = file.getSass().stream().filter(sas1 -> sas1.getUsers().getUserId().equals(userId)).findFirst().orElse(null);
+			if (sas == null) {
+				throw new AzureBlobStorageException("Not authorized to download this file");
+			}
+			sasToken = sas.getSasId().getSasToken();
+		}
+		BlobClient blob = new BlobClientBuilder()
+				.endpoint(endpoint)
+				.containerName(user.getUsername())
+				.blobName(fileName)
+				.sasToken(sasToken)
+				.buildClient();
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		blob.download(outputStream);
+		final byte[] bytes = outputStream.toByteArray();
+		return bytes;
+	}
+
+
 }
 
 

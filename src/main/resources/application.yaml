@@ -35,3 +35,16 @@ spring:
 ## JWT
 jwt:
   secretkey: wyD7j04/rzm+8EABKgQTPO9cFojZI2Q2xRPycfhHtZc=
+
+## Swagger v3
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    csrf:
+      enabled: false
+    path: /api-docs.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  cache:
+    disabled: true

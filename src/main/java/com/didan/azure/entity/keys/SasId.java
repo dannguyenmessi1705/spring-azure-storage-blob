@@ -22,4 +22,20 @@ public class SasId implements Serializable {
     public SasId() {
 
     }
+
+    public String getSasToken() {
+        return sasToken;
+    }
+
+    public void setSasToken(String sasToken) {
+        this.sasToken = sasToken;
+    }
+
+    public String getOwnPermisSas() {
+        return ownPermisSas;
+    }
+
+    public void setOwnPermisSas(String ownPermisSas) {
+        this.ownPermisSas = ownPermisSas;
+    }
 }

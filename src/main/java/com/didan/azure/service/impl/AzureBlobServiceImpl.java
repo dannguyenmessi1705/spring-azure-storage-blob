@@ -1,9 +1,11 @@
 package com.didan.azure.service.impl;
 
 import com.didan.azure.exception.AzureBlobStorageException;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.List;
 
 public interface AzureBlobServiceImpl {
@@ -12,4 +14,5 @@ public interface AzureBlobServiceImpl {
     boolean deleteFile(String fileName) throws AzureBlobStorageException;
     boolean deleteManyFiles(String[] blobNames) throws AzureBlobStorageException;
     boolean deleteAllFiles() throws AzureBlobStorageException;
+    byte[] downloadFile(String fileName) throws IOException, AzureBlobStorageException;
 }

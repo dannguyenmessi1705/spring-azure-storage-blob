@@ -7,8 +7,13 @@ import java.util.List;
 import java.util.Map;
 
 import com.didan.azure.entity.Users;
+import com.didan.azure.exception.AzureBlobStorageException;
 import com.didan.azure.payload.ResponseData;
 import com.didan.azure.service.AzureBlobService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -31,6 +36,8 @@ public class AzureController {
 
 	@Autowired
 	private AzureBlobService azureBlobService;
+	@Autowired
+	private HttpServletResponse response;
 
 	@PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> uploadMany(@RequestParam MultipartFile[] files) {
@@ -129,6 +136,38 @@ public class AzureController {
 			return new ResponseEntity<>(payload, HttpStatus.SERVICE_UNAVAILABLE);
 		}
 	}
+
+	// Download file
+	@GetMapping(value = "/download", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> downloadFile(@RequestParam String filename) {
+		ResponseData payload = new ResponseData();
+		try {
+			String ext = filename.split("\\.")[1];
+			// Set the appropriate response headers and content type read file on the browser
+			HttpHeaders headers = new HttpHeaders();
+			if (ext.equals("jpg") || ext.equals("jpeg") || ext.equals("png")) {
+				headers.setContentType(MediaType.IMAGE_JPEG);
+			} else {
+				headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+			}
+			// set content disposition inline to display file on the browser
+			headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+			headers.set(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=" + filename);
+
+			// Set the response body and return it
+			ByteArrayResource resource = new ByteArrayResource(azureBlobService.downloadFile(filename));;
+			if (resource == null) {
+				return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+			}
+			return ResponseEntity.ok().headers(headers).contentLength(resource.contentLength()).body(resource);
+		} catch (Exception e) {
+			payload.setDescription(e.getMessage());
+			payload.setStatusCode(500);
+			payload.setSuccess(false);
+			return new ResponseEntity<>(payload, HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
 
 //	@PostMapping("/upload/many")
 //	public ResponseEntity<List<String>> uploadMany(@RequestParam MultipartFile[] files) throws IOException {
