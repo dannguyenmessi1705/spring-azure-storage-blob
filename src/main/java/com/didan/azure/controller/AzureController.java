@@ -73,6 +73,63 @@ public class AzureController {
 		}
 	}
 
+	@DeleteMapping(value = "/delete", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<?> deleteFile(@RequestParam String filename) {
+		ResponseData payload = new ResponseData();
+		Map<String, String> data = new HashMap<>();
+		try{
+			if (azureBlobService.deleteFile(filename)) {
+				payload.setDescription("Delete file successful");
+				data.put("filename", filename);
+				payload.setData(data);
+			}
+			return new ResponseEntity<>(payload, HttpStatus.OK);
+		} catch (Exception e){
+			payload.setDescription(e.getMessage());
+			payload.setStatusCode(500);
+			payload.setSuccess(false);
+			return new ResponseEntity<>(payload, HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	// Delete many files
+	@DeleteMapping(value = "/delete/many", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<?> deleteManyFiles(@RequestParam String[] filenames) {
+		ResponseData payload = new ResponseData();
+		Map<String, String[]> data = new HashMap<>();
+		try{
+			if (azureBlobService.deleteManyFiles(filenames)) {
+				payload.setDescription("Delete files successful");
+				data.put("filenames", filenames);
+				payload.setData(data);
+			}
+			return new ResponseEntity<>(payload, HttpStatus.OK);
+		} catch (Exception e){
+			payload.setDescription(e.getMessage());
+			payload.setStatusCode(500);
+			payload.setSuccess(false);
+			return new ResponseEntity<>(payload, HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
+	// Delete all files
+	@DeleteMapping(value = "/delete/all", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> deleteAllFiles() {
+		ResponseData payload = new ResponseData();
+		try{
+			if (azureBlobService.deleteAllFiles()) {
+				payload.setDescription("Delete all files successful");
+				payload.setData(null);
+			}
+			return new ResponseEntity<>(payload, HttpStatus.OK);
+		} catch (Exception e){
+			payload.setDescription(e.getMessage());
+			payload.setStatusCode(500);
+			payload.setSuccess(false);
+			return new ResponseEntity<>(payload, HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+
 //	@PostMapping("/upload/many")
 //	public ResponseEntity<List<String>> uploadMany(@RequestParam MultipartFile[] files) throws IOException {
 //
@@ -87,12 +144,7 @@ public class AzureController {
 //		return ResponseEntity.ok(items);
 //	}
 //
-//	@DeleteMapping
-//	public ResponseEntity<Boolean> delete(@RequestParam String fileName) {
-//
-//		azureBlobAdapter.deleteBlob(fileName);
-//		return ResponseEntity.ok().build();
-//	}
+
 //
 //
 //

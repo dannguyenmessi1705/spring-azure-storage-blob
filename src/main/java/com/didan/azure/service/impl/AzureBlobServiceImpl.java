@@ -9,4 +9,7 @@ import java.util.List;
 public interface AzureBlobServiceImpl {
     List<String> upload(MultipartFile[] files) throws IOException;
     boolean shareFile(String fileName, String username) throws AzureBlobStorageException;
+    boolean deleteFile(String fileName) throws AzureBlobStorageException;
+    boolean deleteManyFiles(String[] blobNames) throws AzureBlobStorageException;
+    boolean deleteAllFiles() throws AzureBlobStorageException;
 }

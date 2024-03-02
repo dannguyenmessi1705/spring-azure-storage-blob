@@ -51,6 +51,7 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 	private final FileInfoRepository fileInfoRepository;
 	private final SasRepository sasRepository;
 	private final SasUtils sasUtils;
+
 	@Autowired
 	public AzureBlobService(HttpServletRequest request,
 							HttpServletResponse response,
@@ -59,7 +60,7 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 							UserRepository userRepository,
 							FileInfoRepository fileInfoRepository,
 							SasRepository sasRepository,
-							SasUtils sasUtils){
+							SasUtils sasUtils) {
 		this.request = request;
 		this.response = response;
 		this.blobServiceClient = blobServiceClient;
@@ -126,7 +127,7 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 			if (shareUser == null) {
 				throw new AzureBlobStorageException("User not found");
 			}
-			if (shareUser.getUserId() == userId){
+			if (shareUser.getUserId() == userId) {
 				throw new AzureBlobStorageException("You can't share file to yourself");
 			}
 			Sas sasKey = file.getSass().stream().filter(sas -> sas.getUsers().getUserId().equals(shareUser.getUserId())).findFirst().orElse(null);
@@ -141,6 +142,88 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 		}
 		return true;
 	}
+
+	// Delete file from Azure Blob Storage
+	@Override
+	public boolean deleteFile(String fileName) throws AzureBlobStorageException {
+		try {
+			String accessToken = jwtUtils.getTokenFromHeader(request);
+			if (!StringUtils.hasText(accessToken)) {
+				logger.info("Not Authorized");
+			}
+			String userId = jwtUtils.getUserIdFromAccessToken(accessToken);
+			Users user = userRepository.findFirstByUserId(userId);
+			FileInfo file = fileInfoRepository.findFirstByFileNameAndUsers_UserId(fileName, userId);
+			if (file == null) {
+				throw new AzureBlobStorageException("File not found or not authorized to delete");
+			}
+			List<Sas> sas = sasRepository.findBySasId_SasToken(file.getSasToken());
+			sasRepository.deleteAll(sas);
+			fileInfoRepository.delete(file);
+			BlobClient blob = blobServiceClient.getBlobContainerClient(user.getUsername()).getBlobClient(fileName);
+			blob.delete();
+		} catch (Exception e) {
+			throw new AzureBlobStorageException(e.getMessage());
+		}
+		return true;
+	}
+
+	// Delete many files from Azure Blob Storage
+	@Override
+	public boolean deleteManyFiles(String[] fileNames) throws AzureBlobStorageException {
+		try {
+			String accessToken = jwtUtils.getTokenFromHeader(request);
+			if (!StringUtils.hasText(accessToken)) {
+				logger.info("Not Authorized");
+			}
+			String userId = jwtUtils.getUserIdFromAccessToken(accessToken);
+			Users user = userRepository.findFirstByUserId(userId);
+			for (String fileName : fileNames) {
+				FileInfo file = fileInfoRepository.findFirstByFileNameAndUsers_UserId(fileName, userId);
+				if (file == null) {
+					throw new AzureBlobStorageException("File not found or not authorized to delete");
+				}
+				List<Sas> sas = sasRepository.findBySasId_SasToken(file.getSasToken());
+				sasRepository.deleteAll(sas);
+				fileInfoRepository.delete(file);
+				BlobClient blob = blobServiceClient.getBlobContainerClient(user.getUsername()).getBlobClient(fileName);
+				blob.delete();
+			}
+		} catch (Exception e) {
+			throw new AzureBlobStorageException(e.getMessage());
+		}
+		return true;
+	}
+
+	//	// Delete all files from Azure Blob Storage
+	@Override
+	public boolean deleteAllFiles() throws AzureBlobStorageException {
+		try {
+			String accessToken = jwtUtils.getTokenFromHeader(request);
+			if (!StringUtils.hasText(accessToken)) {
+				logger.info("Not Authorized");
+			}
+			String userId = jwtUtils.getUserIdFromAccessToken(accessToken);
+			Users user = userRepository.findFirstByUserId(userId);
+			List<FileInfo> files = fileInfoRepository.findByUsers_UserId(userId);
+			if (files.isEmpty()) {
+				throw new AzureBlobStorageException("Your storage is empty");
+			}
+			for (FileInfo file : files) {
+				List<Sas> sas = sasRepository.findBySasId_SasToken(file.getSasToken());
+				sasRepository.deleteAll(sas);
+				fileInfoRepository.delete(file);
+				BlobClient blob = blobServiceClient.getBlobContainerClient(user.getUsername()).getBlobClient(file.getFileName());
+				blob.delete();
+			}
+		} catch (Exception e) {
+			throw new AzureBlobStorageException(e.getMessage());
+		}
+		return true;
+	}
+}
+
+
 //
 //
 //
@@ -181,24 +264,8 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 //		}
 //	}
 //
-//	// Create a new container in Azure Blob Storage
-//	public Boolean createContainer(String containerName) {
-//		// find out if the container exists
-//		if (blobServiceClient.getBlobContainerClient(containerName).exists()) {
-//			return false;
-//		}
-//		blobServiceClient.createBlobContainer(containerName);
-//		return true;
-//	}
-//
-//	// Delete a container in Azure Blob Storage
-//	public Boolean deleteContainer(String containerName) {
-//		if (!blobServiceClient.getBlobContainerClient(containerName).exists()) {
-//			return false;
-//		}
-//		blobServiceClient.deleteBlobContainer(containerName);
-//		return true;
-//	}
+
+
 //
 //
 //	// List all files in Azure Blob Storage
@@ -212,35 +279,7 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 //		return names;
 //
 //	}
-//
-//	// Delete file from Azure Blob Storage
-//	public Boolean deleteBlob(String blobName) {
-//
-//		BlobClient blob = blobContainerClient.getBlobClient(blobName);
-//		blob.delete();
-//		return true;
-//	}
-//
-//	// Delete many files from Azure Blob Storage
-//	public Boolean deleteManyBlobs(String[] blobNames) {
-//		for (String blobName : blobNames) {
-//			// if the blob does not exist, it will throw an exception
-//			if (blobContainerClient.getBlobClient(blobName).exists()) {
-//				BlobClient blob = blobContainerClient.getBlobClient(blobName);
-//				blob.delete();
-//			}
-//		}
-//		return true;
-//	}
-//
-//	// Delete all files from Azure Blob Storage
-//	public Boolean deleteAllBlobs() {
-//		PagedIterable<BlobItem> items = blobContainerClient.listBlobs();
-//		for (BlobItem item : items) {
-//			BlobClient blob = blobContainerClient.getBlobClient(item.getName());
-//			blob.delete();
-//		}
-//		return true;
-//	}
 
-}
+//
+
+//
