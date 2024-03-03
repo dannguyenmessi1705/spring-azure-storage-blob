@@ -3,6 +3,8 @@ package com.didan.azure.controller;
 import com.didan.azure.entity.Users;
 import com.didan.azure.payload.ResponseData;
 import com.didan.azure.service.impl.AuthServiceImpl;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,6 +23,8 @@ public class AuthController {
         this.authService = authService;
     }
 
+    @Operation(summary = "Sign In",
+            description = "Enter username and password to sign in")
     @PostMapping(value = "/signin", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> postLogin(@RequestParam String username, @RequestParam String password){
         ResponseData payload = new ResponseData();
@@ -42,6 +46,8 @@ public class AuthController {
         }
     }
 
+    @Operation(summary = "Sign Up",
+            description = "Enter username and password to sign up")
     @PostMapping(value = "/signup", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> postRegister(@RequestParam String username, @RequestParam String password){
         ResponseData payload = new ResponseData();

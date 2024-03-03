@@ -22,12 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
@@ -39,8 +34,11 @@ public class AzureController {
 	@Autowired
 	private HttpServletResponse response;
 
+	@Operation(summary = "Upload files",
+			description = "Chose files to upload to Azure Blob Storage",
+			security = @SecurityRequirement(name = "bearerAuth"))
 	@PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> uploadMany(@RequestParam MultipartFile[] files) {
+	public ResponseEntity<?> uploadMany(@ModelAttribute MultipartFile[] files) {
 		ResponseData payload = new ResponseData();
 		Map<String, List<String>> response = new HashMap<>();
 		try{
@@ -60,7 +58,10 @@ public class AzureController {
 	}
 
 	// Share file with user
-	@PostMapping(value = "/share", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@Operation(summary = "Share file with user",
+			description = "Enter the filename and the username to share the file with",
+			security = @SecurityRequirement(name = "bearerAuth"))
+	@PostMapping(value = "/share", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> shareFile(@RequestParam String filename, @RequestParam String username) {
 		ResponseData payload = new ResponseData();
 		Map<String, String> data = new HashMap<>();
@@ -80,7 +81,11 @@ public class AzureController {
 		}
 	}
 
-	@DeleteMapping(value = "/delete", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	// Delete file
+	@Operation(summary = "Delete file",
+			description = "Enter the filename to delete",
+			security = @SecurityRequirement(name = "bearerAuth"))
+	@DeleteMapping(value = "/delete", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> deleteFile(@RequestParam String filename) {
 		ResponseData payload = new ResponseData();
 		Map<String, String> data = new HashMap<>();
@@ -100,7 +105,10 @@ public class AzureController {
 	}
 
 	// Delete many files
-	@DeleteMapping(value = "/delete/many", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@Operation(summary = "Delete many files",
+			description = "Enter the filenames to delete. Example: filename1, filename2, filename3",
+			security = @SecurityRequirement(name = "bearerAuth"))
+	@DeleteMapping(value = "/delete/many", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> deleteManyFiles(@RequestParam String[] filenames) {
 		ResponseData payload = new ResponseData();
 		Map<String, String[]> data = new HashMap<>();
@@ -120,6 +128,9 @@ public class AzureController {
 	}
 
 	// Delete all files
+	@Operation(summary = "Delete all files",
+			description = "Delete all files in the container",
+			security = @SecurityRequirement(name = "bearerAuth"))
 	@DeleteMapping(value = "/delete/all", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> deleteAllFiles() {
 		ResponseData payload = new ResponseData();
@@ -138,8 +149,8 @@ public class AzureController {
 	}
 
 	// Download file
-	@Operation(summary = "Join conversation to chat",
-			description = "Enter the id conversation to join",
+	@Operation(summary = "Download file",
+			description = "Enter the filename to download the file",
 			security = @SecurityRequirement(name = "bearerAuth"))
 	@GetMapping(value = "/download", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> downloadFile(@RequestParam String filename) {
@@ -172,8 +183,8 @@ public class AzureController {
 	}
 
 	// List files
-	@Operation(summary = "Join conversation to chat",
-			description = "Enter the id conversation to join",
+	@Operation(summary = "Get all files you have access to",
+			description = "List all files in the container",
 			security = @SecurityRequirement(name = "bearerAuth"))
 	@GetMapping(value = "/list", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> listFiles() {
@@ -192,6 +203,5 @@ public class AzureController {
 			return new ResponseEntity<>(payload, HttpStatus.SERVICE_UNAVAILABLE);
 		}
 	}
-	
 }
 

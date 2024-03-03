@@ -127,7 +127,7 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 			if (shareUser.getUserId() == userId) {
 				throw new AzureBlobStorageException("You can't share file to yourself");
 			}
-			Sas sasKey = file.getSass().stream().filter(sas -> sas.getUsers().getUserId().equals(shareUser.getUserId())).findFirst().orElse(null);
+			Sas sasKey = sasRepository.findBySasId_OwnPermisSasAndSasId_SasToken(shareUser.getUserId(), file.getSasToken());
 			if (sasKey != null) {
 				throw new AzureBlobStorageException("File has been shared to this user");
 			}
@@ -300,39 +300,3 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 		}
 	}
 }
-
-
-//
-//
-//
-//	// Download file from Azure Blob Storage
-//	public byte[] getFile(String fileName) throws URISyntaxException {
-//
-//		BlobClient blob = blobContainerClient.getBlobClient(fileName);
-//		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-//		blob.download(outputStream);
-//		final byte[] bytes = outputStream.toByteArray();
-//		return bytes;
-//
-//	}
-//
-//
-
-
-//
-//
-//	// List all files in Azure Blob Storage
-//	public List<String> listBlobs() {
-//
-//		PagedIterable<BlobItem> items = blobContainerClient.listBlobs();
-//		List<String> names = new ArrayList<String>();
-//		for (BlobItem item : items) {
-//			names.add(item.getName());
-//		}
-//		return names;
-//
-//	}
-
-//
-
-//
