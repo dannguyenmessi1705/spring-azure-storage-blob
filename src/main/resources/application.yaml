@@ -1,10 +1,10 @@
 azure:
   storage:
-    endpoint: https://didanjava.blob.core.windows.net/
+    endpoint: https://${AZURE_ACCOUNT_NAME:didanjava}.blob.core.windows.net/
     connection:
-      string: DefaultEndpointsProtocol=https;AccountName=didanjava;AccountKey=sMRV7V7Am8gostA3S/ThN4oV1/4zXly26Q6zjm0UjKoKMqBtSIp329jACzfO/EEPI3Ulbwk1Ysal+ASt8PqdnQ==;EndpointSuffix=core.windows.net
+      string: ${AZURE_CONNECTION_STRING:DefaultEndpointsProtocol=https;AccountName=didanjava;AccountKey=sMRV7V7Am8gostA3S/ThN4oV1/4zXly26Q6zjm0UjKoKMqBtSIp329jACzfO/EEPI3Ulbwk1Ysal+ASt8PqdnQ==;EndpointSuffix=core.windows.net}
     account:
-      name: didanjava
+      name: ${AZURE_ACCOUNT_NAME:didanjava}
     key: sMRV7V7Am8gostA3S/ThN4oV1/4zXly26Q6zjm0UjKoKMqBtSIp329jACzfO/EEPI3Ulbwk1Ysal+ASt8PqdnQ==
 
 server:
