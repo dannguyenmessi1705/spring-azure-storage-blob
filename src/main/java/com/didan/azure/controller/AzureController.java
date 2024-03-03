@@ -138,6 +138,9 @@ public class AzureController {
 	}
 
 	// Download file
+	@Operation(summary = "Join conversation to chat",
+			description = "Enter the id conversation to join",
+			security = @SecurityRequirement(name = "bearerAuth"))
 	@GetMapping(value = "/download", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> downloadFile(@RequestParam String filename) {
 		ResponseData payload = new ResponseData();
@@ -155,7 +158,7 @@ public class AzureController {
 			headers.set(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=" + filename);
 
 			// Set the response body and return it
-			ByteArrayResource resource = new ByteArrayResource(azureBlobService.downloadFile(filename));;
+			ByteArrayResource resource = new ByteArrayResource(azureBlobService.downloadFile(filename));
 			if (resource == null) {
 				return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 			}
@@ -168,34 +171,27 @@ public class AzureController {
 		}
 	}
 
-
-//	@PostMapping("/upload/many")
-//	public ResponseEntity<List<String>> uploadMany(@RequestParam MultipartFile[] files) throws IOException {
-//
-//		List<String> fileNames = azureBlobAdapter.uploadMany(files);
-//		return ResponseEntity.ok(fileNames);
-//	}
-//
-//	@GetMapping("/list")
-//	public ResponseEntity<List<String>> getAllBlobs() {
-//
-//		List<String> items = azureBlobAdapter.listBlobs();
-//		return ResponseEntity.ok(items);
-//	}
-//
-
-//
-//
-//
-//	@GetMapping("/download")
-//	public ResponseEntity<Resource> getFile(@RequestParam String fileName) throws URISyntaxException {
-//
-//		ByteArrayResource resource = new ByteArrayResource(azureBlobAdapter.getFile(fileName));
-//
-//		HttpHeaders headers = new HttpHeaders();
-//		headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"");
-//
-//		return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM).headers(headers).body(resource);
-//	}
+	// List files
+	@Operation(summary = "Join conversation to chat",
+			description = "Enter the id conversation to join",
+			security = @SecurityRequirement(name = "bearerAuth"))
+	@GetMapping(value = "/list", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> listFiles() {
+		ResponseData payload = new ResponseData();
+		try{
+			Map<String, Map<String, String>> files = azureBlobService.listFiles();
+			if (files != null) {
+				payload.setDescription("List files successful");
+				payload.setData(files);
+			}
+			return new ResponseEntity<>(payload, HttpStatus.OK);
+		} catch (Exception e){
+			payload.setDescription(e.getMessage());
+			payload.setStatusCode(500);
+			payload.setSuccess(false);
+			return new ResponseEntity<>(payload, HttpStatus.SERVICE_UNAVAILABLE);
+		}
+	}
+	
 }
 

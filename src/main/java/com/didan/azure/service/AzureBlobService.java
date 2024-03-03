@@ -71,10 +71,11 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 
 	// Upload many files to Azure Blob Storage
 	@Override
-	public List<String> upload(MultipartFile[] multipartFiles) throws IOException {
+	public List<String> upload(MultipartFile[] multipartFiles) throws IOException, AzureBlobStorageException {
 		String accessToken = jwtUtils.getTokenFromHeader(request);
 		if (!StringUtils.hasText(accessToken)) {
 			logger.info("Not Authorized");
+			throw new AzureBlobStorageException("Not Authorized");
 		}
 		String userId = jwtUtils.getUserIdFromAccessToken(accessToken);
 		Users user = userRepository.findFirstByUserId(userId);
@@ -99,9 +100,6 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 			fileInfo.setFilePath(blobClient.getBlobUrl());
 			fileInfo.setUsers(user);
 			fileInfoRepository.save(fileInfo);
-			Sas sas = new Sas();
-			sas.setSasId(new SasId(sasBlobToken, userId));
-			sasRepository.save(sas);
 			fileNames.add(newFileName);
 		}
 		return fileNames;
@@ -114,6 +112,7 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 			String accessToken = jwtUtils.getTokenFromHeader(request);
 			if (!StringUtils.hasText(accessToken)) {
 				logger.info("Not Authorized");
+				throw new AzureBlobStorageException("Not Authorized");
 			}
 			String userId = jwtUtils.getUserIdFromAccessToken(accessToken);
 			Users user = userRepository.findFirstByUserId(userId);
@@ -148,6 +147,7 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 			String accessToken = jwtUtils.getTokenFromHeader(request);
 			if (!StringUtils.hasText(accessToken)) {
 				logger.info("Not Authorized");
+				throw new AzureBlobStorageException("Not Authorized");
 			}
 			String userId = jwtUtils.getUserIdFromAccessToken(accessToken);
 			Users user = userRepository.findFirstByUserId(userId);
@@ -173,6 +173,7 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 			String accessToken = jwtUtils.getTokenFromHeader(request);
 			if (!StringUtils.hasText(accessToken)) {
 				logger.info("Not Authorized");
+				throw new AzureBlobStorageException("Not Authorized");
 			}
 			String userId = jwtUtils.getUserIdFromAccessToken(accessToken);
 			Users user = userRepository.findFirstByUserId(userId);
@@ -200,6 +201,7 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 			String accessToken = jwtUtils.getTokenFromHeader(request);
 			if (!StringUtils.hasText(accessToken)) {
 				logger.info("Not Authorized");
+				throw new AzureBlobStorageException("Not Authorized");
 			}
 			String userId = jwtUtils.getUserIdFromAccessToken(accessToken);
 			Users user = userRepository.findFirstByUserId(userId);
@@ -225,6 +227,7 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 		String accessToken = jwtUtils.getTokenFromHeader(request);
 		if (!StringUtils.hasText(accessToken)) {
 			logger.info("Not Authorized");
+			throw new AzureBlobStorageException("Not Authorized");
 		}
 		String userId = jwtUtils.getUserIdFromAccessToken(accessToken);
 		Users user = userRepository.findFirstByUserId(userId);
@@ -236,7 +239,7 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 		if (file.getUsers().getUserId().equals(userId)) {
 			sasToken = file.getSasToken();
 		} else {
-			Sas sas = file.getSass().stream().filter(sas1 -> sas1.getUsers().getUserId().equals(userId)).findFirst().orElse(null);
+			Sas sas = sasRepository.findBySasId_OwnPermisSasAndSasId_SasToken(user.getUserId(), file.getSasToken());
 			if (sas == null) {
 				throw new AzureBlobStorageException("Not authorized to download this file");
 			}
@@ -244,7 +247,7 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 		}
 		BlobClient blob = new BlobClientBuilder()
 				.endpoint(endpoint)
-				.containerName(user.getUsername())
+				.containerName(file.getUsers().getUsername())
 				.blobName(fileName)
 				.sasToken(sasToken)
 				.buildClient();
@@ -254,7 +257,48 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 		return bytes;
 	}
 
-
+	@Override
+	public Map<String, Map<String, String>> listFiles() throws URISyntaxException, AzureBlobStorageException {
+		try{
+			Map<String, Map<String, String>> list = new HashMap<>();
+			String accessToken = jwtUtils.getTokenFromHeader(request);
+			if (!StringUtils.hasText(accessToken)) {
+				logger.info("Not Authorized");
+				throw new AzureBlobStorageException("Not Authorized");
+			}
+			String userId = jwtUtils.getUserIdFromAccessToken(accessToken);
+			Users user = userRepository.findFirstByUserId(userId);
+			if (user == null) {
+				throw new AzureBlobStorageException("User not found");
+			}
+			List<FileInfo> files = fileInfoRepository.findByUsers_UserId(userId);
+			List<Sas> fileShareds = sasRepository.findBySasId_OwnPermisSas(userId);
+			if (files.isEmpty() && fileShareds.isEmpty()) {
+				throw new AzureBlobStorageException("Your storage is empty");
+			}
+			String protocol = request.getScheme();
+			String host = request.getHeader("host");
+			String http = protocol + "://" + host + "/download?fileName=";
+			if (!files.isEmpty()){
+				Map<String, String> ownFile = new HashMap<>();
+				for (FileInfo file : files) {
+					ownFile.put(file.getFileName(), http + file.getFileName());
+				}
+				list.put("own files", ownFile);
+			}
+			if (!fileShareds.isEmpty()){
+				Map<String, String> sharedFile = new HashMap<>();
+				for (Sas fileShared : fileShareds) {
+					FileInfo fileSharedFileInfo = fileInfoRepository.findBySasToken(fileShared.getSasId().getSasToken());
+					sharedFile.put(fileSharedFileInfo.getFileName(), http + fileSharedFileInfo.getFileName());
+				}
+				list.put("shared files", sharedFile);
+			}
+			return list;
+		} catch (Exception e){
+			throw new AzureBlobStorageException(e.getMessage());
+		}
+	}
 }
 
 
@@ -272,31 +316,6 @@ public class AzureBlobService implements AzureBlobServiceImpl {
 //
 //	}
 //
-//	// Read file in browser or download
-//	public void readFileOrDownload(String fileName) throws IOException, URISyntaxException {
-//		byte[] fileBytes = getFile(fileName);
-//		if (fileBytes != null && fileBytes.length > 0) {
-//			// Check if the browser supports inline display
-//			String userAgent = request.getHeader("User-Agent"); // import javax.servlet.http.HttpServletRequest;
-//			boolean isBrowser = (userAgent != null && userAgent.contains("Mozilla"));
-//			if (isBrowser) {
-//				// Display the file in the browser
-//				// Import javax.servlet.http.HttpServletResponse
-//				response.setContentType("application/pdf"); // Set the appropriate content type
-//				response.setContentLength(fileBytes.length); // Set the content length
-//				response.setHeader("Content-Disposition", "inline; filename=\"" + fileName + "\""); // Set the content disposition
-//				response.getOutputStream().write(fileBytes); // Write the file bytes to the response output stream
-//				response.getOutputStream().flush();
-//			} else {
-//				// Download the file
-//				response.setContentType("application/octet-stream"); // Set the appropriate content type
-//				response.setContentLength(fileBytes.length); // Set the content length
-//				response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\""); // Set the content disposition
-//				response.getOutputStream().write(fileBytes); // Write the file bytes to the response output stream
-//				response.getOutputStream().flush();
-//			}
-//		}
-//	}
 //
 
 
