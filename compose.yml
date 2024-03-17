@@ -1,0 +1,26 @@
+services:
+  mysql:
+    container_name: mysqldb
+    image: mysql:8.0
+    ports:
+      - 3308:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: 17052002
+      MYSQL_DATABASE: spring_azure_blob
+  #    volumes:
+  #      - ./mysql.sql:/docker-entrypoint-initdb.d/mysql.sql
+
+  spring-boot:
+    build: .
+    ports:
+      - 8088:8088
+    environment:
+      MYSQL_HOST: mysqldb
+      MYSQL_USER: root
+      MYSQL_PASSWORD: 17052002
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: spring_azure_blob
+      AZURE_ACCOUNT_NAME: zdlab
+      AZURE_CONNECTION_STRING: DefaultEndpointsProtocol=https;AccountName=zdlab;AccountKey=ALu/f/GeBTIUnwgCtzwL1erWrazsiJlckpzc0ChHOF0aBuHTyg41Htq/T4maDS0WUl4prBWFAK8X+AStwCTXyg==;EndpointSuffix=core.windows.net
+    depends_on:
+      - mysql

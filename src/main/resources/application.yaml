@@ -1,10 +1,10 @@
 azure:
   storage:
-    endpoint: https://${AZURE_ACCOUNT_NAME:didanjava}.blob.core.windows.net/
+    endpoint: https://zdlab.blob.core.windows.net/
     connection:
-      string: ${AZURE_CONNECTION_STRING:DefaultEndpointsProtocol=https;AccountName=didanjava;AccountKey=sMRV7V7Am8gostA3S/ThN4oV1/4zXly26Q6zjm0UjKoKMqBtSIp329jACzfO/EEPI3Ulbwk1Ysal+ASt8PqdnQ==;EndpointSuffix=core.windows.net}
+      string: DefaultEndpointsProtocol=https;AccountName=zdlab;AccountKey=ALu/f/GeBTIUnwgCtzwL1erWrazsiJlckpzc0ChHOF0aBuHTyg41Htq/T4maDS0WUl4prBWFAK8X+AStwCTXyg==;EndpointSuffix=core.windows.net
     account:
-      name: ${AZURE_ACCOUNT_NAME:didanjava}
+      name: zdlab
     key: sMRV7V7Am8gostA3S/ThN4oV1/4zXly26Q6zjm0UjKoKMqBtSIp329jACzfO/EEPI3Ulbwk1Ysal+ASt8PqdnQ==
 
 server:
@@ -14,12 +14,12 @@ server:
 # Docker và Localhost
 spring:
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/spring_azure_blob
-    username: ${MYSQL_USER:root}
-    password: ${MYSQL_PASSWORD:17052002}
+    url: jdbc:mysql://mysqldb:3306/spring_azure_blob?serverTimezone=UTC&characterEncoding=UTF-8&useUnicode=true&allowPublicKeyRetrieval=true&useSSL=false
+    username: root
+    password: 17052002
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
-    database-platform: org.hibernate.dialect.MySQL5Dialect
+    database-platform: org.hibernate.dialect.MySQL8Dialect
     show-sql: true
     generate-ddl: true
     hibernate.ddl-auto: update
