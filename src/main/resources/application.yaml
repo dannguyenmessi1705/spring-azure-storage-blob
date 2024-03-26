@@ -2,7 +2,7 @@ azure:
   storage:
     endpoint: https://zdlab.blob.core.windows.net/
     connection:
-      string: DefaultEndpointsProtocol=https;AccountName=zdlab;AccountKey=ALu/f/GeBTIUnwgCtzwL1erWrazsiJlckpzc0ChHOF0aBuHTyg41Htq/T4maDS0WUl4prBWFAK8X+AStwCTXyg==;EndpointSuffix=core.windows.net
+      string: DefaultEndpointsProtocol=https;AccountName=zdlab;AccountKey=MsDbm7XnFUeoPR5XYcFhUO9MZnO1LfbS7sInSxvVfWPoJiKrnk91g38h2l28M8AWcDzJ1X9yGPq8+ASt1VN8jw==;EndpointSuffix=core.windows.net
     account:
       name: zdlab
     key: sMRV7V7Am8gostA3S/ThN4oV1/4zXly26Q6zjm0UjKoKMqBtSIp329jACzfO/EEPI3Ulbwk1Ysal+ASt8PqdnQ==
